@@ -9,11 +9,13 @@ interface AIAnalysisResult {
 
 export async function analyzeWithDeepSeek(videoData: VideoData): Promise<AIAnalysisResult> {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+    const apiKey = process.env.DEEPSEEK_API_KEY
+    
+    console.log('🤖 开始DeepSeek AI分析...')
     
     if (!apiKey) {
-      console.warn('DeepSeek API Key not configured, using demo analysis')
-      return getDemoAnalysis(videoData)
+      console.warn('⚠️ DeepSeek API Key未配置')
+      throw new Error('DeepSeek API Key未配置')
     }
 
     const prompt = `

@@ -6,48 +6,57 @@ const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3'
 
 export async function scrapeYouTube(videoId: string, url: string): Promise<VideoData> {
   try {
+    console.log('🎬 开始获取YouTube视频数据:', { videoId, url })
+    
     if (!YOUTUBE_API_KEY) {
-      console.warn('YouTube API Key not configured, using demo data')
-      return getYouTubeDemoData(videoId, url)
+      console.warn('⚠️ YouTube API Key未配置')
+      throw new Error('YouTube API Key未配置')
     }
 
-    // Get video details
+    console.log('🔑 使用API Key获取视频详情...')
+    
+    // 获取视频详情
     const videoResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/videos`, {
       params: {
         part: 'snippet,statistics,contentDetails',
         id: videoId,
         key: YOUTUBE_API_KEY
-      }
+      },
+      timeout: 10000
     })
 
     if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
-      throw new Error('Video not found')
+      throw new Error('视频未找到或已被删除')
     }
 
     const video = videoResponse.data.items[0]
+    console.log('✅ YouTube视频信息获取成功')
 
-    // Get channel details for subscriber count
+    // 获取频道订阅者数量
     let subscriberCount = 0
     try {
+      console.log('👤 获取频道信息...')
       const channelResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/channels`, {
         params: {
           part: 'statistics',
           id: video.snippet.channelId,
           key: YOUTUBE_API_KEY
-        }
+        },
+        timeout: 5000
       })
       
       if (channelResponse.data.items && channelResponse.data.items.length > 0) {
         subscriberCount = parseInt(channelResponse.data.items[0].statistics.subscriberCount || '0')
+        console.log('✅ 频道信息获取成功，订阅者:', subscriberCount)
       }
     } catch (error) {
-      console.warn('Failed to get channel subscriber count:', error)
+      console.warn('⚠️ 频道信息获取失败:', error.message)
     }
     
     // 解析时长 (PT12M34S -> 754秒)
     const duration = parseDuration(video.contentDetails.duration)
     
-    return {
+    const result = {
       platform: 'youtube',
       videoId,
       url,
@@ -70,6 +79,16 @@ export async function scrapeYouTube(videoId: string, url: string): Promise<Video
       tags: video.snippet.tags || [],
       success: true
     }
+
+    console.log('🎉 YouTube数据获取完成:', {
+      title: result.title,
+      views: result.views,
+      likes: result.likes,
+      duration: result.duration,
+      author: result.author.name
+    })
+
+    return result
   } catch (error) {
     console.warn('YouTube API unavailable, using demo data:', error)
     // API不可用或CORS错误时，返回演示数据

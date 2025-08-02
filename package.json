@@ -6,11 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "export": "next export",
     "start": "next start",
-    "lint": "next lint",
-    "serve": "npx serve out",
-    "netlify": "netlify dev"
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "14.2.5",

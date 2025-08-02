@@ -6,49 +6,93 @@ const BILIBILI_API_BASE = 'https://api.bilibili.com/x'
 
 export async function scrapeBilibili(videoId: string, url: string): Promise<VideoData> {
   try {
+    console.log('📺 开始获取B站视频数据:', { videoId, url })
+    
     // 从URL或videoId中提取BV号或AV号
     const bvid = extractBVID(videoId, url)
     if (!bvid) {
-      // 如果无法提取BV号，返回演示数据
-      return getBilibiliDemoData(videoId, url)
+      throw new Error('无法解析B站视频ID')
     }
 
-    // 尝试获取视频基本信息
-    const videoInfoResponse = await axios.get(`${BILIBILI_API_BASE}/web-interface/view`, {
-      params: { bvid },
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Referer': 'https://www.bilibili.com/'
-      }
-    })
+    console.log('🔍 解析得到BVID:', bvid)
 
-    if (videoInfoResponse.data.code !== 0) {
-      throw new Error(`Bilibili API error: ${videoInfoResponse.data.message}`)
-    }
+    // 使用多种方法尝试获取视频信息
+    let videoData = null
 
-    const videoData = videoInfoResponse.data.data
-
-    // 获取UP主信息
-    let uploaderInfo = null
+    // 方法1: 尝试官方API
     try {
+      console.log('📡 尝试官方API...')
+      const apiResponse = await axios.get(`${BILIBILI_API_BASE}/web-interface/view`, {
+        params: { bvid },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.bilibili.com/',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+        },
+        timeout: 10000
+      })
+
+      if (apiResponse.data.code === 0) {
+        videoData = apiResponse.data.data
+        console.log('✅ 官方API获取成功')
+      } else {
+        console.warn('⚠️ 官方API返回错误:', apiResponse.data.message)
+      }
+    } catch (apiError) {
+      console.warn('⚠️ 官方API调用失败:', apiError.message)
+    }
+
+    // 方法2: 如果官方API失败，尝试备用接口
+    if (!videoData) {
+      try {
+        console.log('📡 尝试备用接口...')
+        const backupResponse = await axios.get(`https://api.bilibili.com/x/web-interface/view/detail`, {
+          params: { bvid },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://www.bilibili.com/'
+          },
+          timeout: 10000
+        })
+
+        if (backupResponse.data.code === 0) {
+          videoData = backupResponse.data.data.View
+          console.log('✅ 备用接口获取成功')
+        }
+      } catch (backupError) {
+        console.warn('⚠️ 备用接口也失败:', backupError.message)
+      }
+    }
+
+    if (!videoData) {
+      throw new Error('所有API接口都无法获取数据')
+    }
+
+    // 获取UP主粉丝数信息
+    let followerCount = 0
+    try {
+      console.log('👤 获取UP主信息...')
       const uploaderResponse = await axios.get(`${BILIBILI_API_BASE}/relation/stat`, {
         params: { vmid: videoData.owner.mid },
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Referer': 'https://www.bilibili.com/'
-        }
+        },
+        timeout: 5000
       })
       
       if (uploaderResponse.data.code === 0) {
-        uploaderInfo = uploaderResponse.data.data
+        followerCount = uploaderResponse.data.data.follower
+        console.log('✅ UP主信息获取成功，粉丝数:', followerCount)
       }
     } catch (error) {
-      console.warn('Failed to get uploader info:', error)
+      console.warn('⚠️ UP主信息获取失败:', error.message)
     }
 
-    return {
+    const result = {
       platform: 'bilibili',
-      videoId,
+      videoId: bvid,
       url,
       title: videoData.title,
       description: videoData.desc || '',
@@ -62,11 +106,21 @@ export async function scrapeBilibili(videoId: string, url: string): Promise<Vide
       author: {
         name: videoData.owner.name,
         avatar: videoData.owner.face,
-        followers: uploaderInfo?.follower || 0
+        followers: followerCount
       },
       tags: videoData.tag?.map((tag: any) => tag.tag_name) || [],
       success: true
     }
+
+    console.log('🎉 B站数据获取完成:', {
+      title: result.title,
+      views: result.views,
+      likes: result.likes,
+      duration: result.duration,
+      author: result.author.name
+    })
+
+    return result
   } catch (error) {
     console.warn('Bilibili API unavailable, using demo data:', error)
     // CORS错误或API不可用时，返回演示数据

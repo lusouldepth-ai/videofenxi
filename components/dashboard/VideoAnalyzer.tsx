@@ -25,17 +25,31 @@ export function VideoAnalyzer({ onAnalysisComplete }: VideoAnalyzerProps) {
     setIsAnalyzing(true)
     
     try {
-      const result = await analyzeVideoClient(url.trim())
+      console.log('🚀 开始分析视频:', url.trim())
+      
+      // 调用真实的服务端API
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: url.trim() }),
+      })
 
-      if (result.success) {
-        setAnalysisResult(result.data)
-        onAnalysisComplete?.(result.data)
-        toast.success('分析完成！')
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log('✅ 分析完成:', data.data)
+        setAnalysisResult(data.data)
+        onAnalysisComplete?.(data.data)
+        toast.success('分析完成！获取到真实数据')
       } else {
-        toast.error(result.error || '分析失败')
+        console.error('❌ 分析失败:', data.error)
+        toast.error(data.error || '分析失败')
       }
     } catch (error) {
-      toast.error('分析失败，请稍后重试')
+      console.error('💥 网络错误:', error)
+      toast.error('网络错误，请稍后重试')
     } finally {
       setIsAnalyzing(false)
     }
