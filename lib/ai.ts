@@ -9,6 +9,13 @@ interface AIAnalysisResult {
 
 export async function analyzeWithDeepSeek(videoData: VideoData): Promise<AIAnalysisResult> {
   try {
+    const apiKey = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+    
+    if (!apiKey) {
+      console.warn('DeepSeek API Key not configured, using demo analysis')
+      return getDemoAnalysis(videoData)
+    }
+
     const prompt = `
 作为专业的视频内容分析师，请分析以下视频数据并提供优化建议：
 
@@ -75,7 +82,7 @@ export async function analyzeWithDeepSeek(videoData: VideoData): Promise<AIAnaly
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         }
       }
@@ -224,4 +231,25 @@ function generateTagSuggestions(platform: string): string[] {
   }
   
   return tagMap[platform] || ['教程', '分享', '干货', '实用']
+}
+
+// 演示分析数据
+function getDemoAnalysis(videoData: VideoData): AIAnalysisResult {
+  return {
+    analysis: {
+      content_quality: "这是一个演示分析结果。内容质量较好，具有一定的观看价值和传播潜力。",
+      engagement_rate: "互动率为演示数据，约为3.5%，表现良好",
+      viral_potential: "具有中等传播潜力，优化后可进一步提升",
+      strengths: ["标题吸引人", "内容结构清晰", "时长适中", "标签使用合理"],
+      weaknesses: ["可以增加更多互动元素", "封面可以更加突出主题"]
+    },
+    suggestions: {
+      title: "建议在标题中加入数字或问号，如'5个技巧让你...'",
+      thumbnail: "建议使用高对比度的封面，突出核心内容",
+      timing: generateTimingSuggestion(videoData.platform),
+      tags: generateTagSuggestions(videoData.platform),
+      content: "建议在开头3秒内抓住观众注意力，结尾添加行动号召"
+    },
+    score: 78
+  }
 }
