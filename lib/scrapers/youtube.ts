@@ -79,24 +79,31 @@ export async function scrapeYouTube(videoId: string, url: string): Promise<Video
 
 // 获取YouTube演示数据
 function getYouTubeDemoData(videoId: string, url: string): VideoData {
+  // 生成基于URL的随机但一致的数据
+  const urlHash = url.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+  const baseViews = 100000 + (urlHash % 1000000)
+  const baseLikes = Math.floor(baseViews * (0.02 + (urlHash % 80) / 1000))
+  const baseComments = Math.floor(baseLikes * (0.05 + (urlHash % 30) / 1000))
+  const baseDuration = 120 + (urlHash % 800) // 2-15分钟
+  
   return {
     platform: 'youtube',
     videoId,
     url,
-    title: '【AI教程】10分钟学会使用ChatGPT提升工作效率',
-    description: '这个视频将教你如何有效使用ChatGPT和其他AI工具来提升日常工作效率。涵盖提示词工程、文档写作、代码生成等实用技巧。无论你是程序员、设计师还是内容创作者，都能从中受益。',
+    title: `【演示数据】YouTube视频ID: ${videoId} 的分析结果`,
+    description: '这是演示数据。在实际部署中，我们会尝试获取真实的YouTube视频数据。如果API可用，您将看到真实的视频标题、描述、播放量等信息。当前显示的数据是基于视频URL生成的演示数据。',
     thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-    views: 456789,
-    likes: 23456,
-    comments: 1789,
+    views: baseViews,
+    likes: baseLikes,
+    comments: baseComments,
     shares: 0, // YouTube API不提供分享数
-    duration: 634, // 10分34秒
-    publishedAt: new Date(Date.now() - 86400000), // 1天前
+    duration: baseDuration,
+    publishedAt: new Date(Date.now() - (urlHash % 10) * 86400000), // 0-10天前
     author: {
-      name: 'AI学习频道',
-      followers: 125000
+      name: '演示频道',
+      followers: 50000 + (urlHash % 200000)
     },
-    tags: ['AI', 'ChatGPT', '效率工具', '人工智能', '教程'],
+    tags: ['演示数据', 'YouTube', '视频分析', 'AI分析'],
     success: true
   }
 }

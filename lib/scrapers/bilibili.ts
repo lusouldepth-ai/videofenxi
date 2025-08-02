@@ -78,25 +78,32 @@ export async function scrapeBilibili(videoId: string, url: string): Promise<Vide
 function getBilibiliDemoData(videoId: string, url: string): VideoData {
   const bvid = extractBVID(videoId, url) || videoId
   
+  // 生成基于URL的随机但一致的数据
+  const urlHash = url.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+  const baseViews = 50000 + (urlHash % 500000)
+  const baseLikes = Math.floor(baseViews * (0.03 + (urlHash % 100) / 1000))
+  const baseComments = Math.floor(baseLikes * (0.1 + (urlHash % 50) / 1000))
+  const baseDuration = 180 + (urlHash % 600) // 3-13分钟
+  
   return {
     platform: 'bilibili',
     videoId: bvid,
     url,
-    title: '【技术分享】2024年前端开发必会的10个技巧',
-    description: '本视频详细介绍了2024年前端开发必须掌握的10个核心技巧，包括React新特性、TypeScript最佳实践、性能优化方案等。适合有一定基础的前端开发者学习提升。',
+    title: `【演示数据】基于URL: ${url.substring(url.lastIndexOf('/') + 1, url.lastIndexOf('/') + 20)}... 的分析`,
+    description: '这是演示数据。在实际部署中，我们会尝试获取真实的B站视频数据。如果API可用，您将看到真实的视频标题、描述、播放量等信息。',
     thumbnail: `https://i0.hdslb.com/bfs/archive/sample-${bvid}.jpg`,
-    views: 234567,
-    likes: 15678,
-    comments: 4567,
-    shares: 2345,
-    duration: 720, // 12分钟
-    publishedAt: new Date(Date.now() - 172800000), // 2天前
+    views: baseViews,
+    likes: baseLikes,
+    comments: baseComments,
+    shares: Math.floor(baseComments * 0.5),
+    duration: baseDuration,
+    publishedAt: new Date(Date.now() - (urlHash % 7) * 86400000), // 0-7天前
     author: {
-      name: '前端技术分享',
+      name: '演示UP主',
       avatar: 'https://i1.hdslb.com/bfs/face/sample-avatar.jpg',
-      followers: 89012
+      followers: 10000 + (urlHash % 100000)
     },
-    tags: ['前端开发', '技术分享', 'JavaScript', 'React', 'TypeScript'],
+    tags: ['演示数据', '视频分析', 'B站', '技术分享'],
     success: true
   }
 }

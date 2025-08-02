@@ -38,6 +38,8 @@ export async function analyzeVideoClient(url: string) {
         suggestions,
         score,
         createdAt: new Date(),
+        // 直接展开videoData的属性到顶层，方便组件访问
+        ...videoData,
         views: videoData.views?.toString(),
         likes: videoData.likes?.toString(),
         comments: videoData.comments?.toString(),
