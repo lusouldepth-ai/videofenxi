@@ -50,7 +50,7 @@ export async function scrapeYouTube(videoId: string, url: string): Promise<Video
         console.log('✅ 频道信息获取成功，订阅者:', subscriberCount)
       }
     } catch (error) {
-      console.warn('⚠️ 频道信息获取失败:', error.message)
+      console.warn('⚠️ 频道信息获取失败:', error instanceof Error ? error.message : String(error))
     }
     
     // 解析时长 (PT12M34S -> 754秒)

@@ -40,7 +40,7 @@ export async function scrapeBilibili(videoId: string, url: string): Promise<Vide
         console.warn('⚠️ 官方API返回错误:', apiResponse.data.message)
       }
     } catch (apiError) {
-      console.warn('⚠️ 官方API调用失败:', apiError.message)
+      console.warn('⚠️ 官方API调用失败:', apiError instanceof Error ? apiError.message : String(apiError))
     }
 
     // 方法2: 如果官方API失败，尝试备用接口
@@ -61,7 +61,7 @@ export async function scrapeBilibili(videoId: string, url: string): Promise<Vide
           console.log('✅ 备用接口获取成功')
         }
       } catch (backupError) {
-        console.warn('⚠️ 备用接口也失败:', backupError.message)
+        console.warn('⚠️ 备用接口也失败:', backupError instanceof Error ? backupError.message : String(backupError))
       }
     }
 
@@ -87,7 +87,7 @@ export async function scrapeBilibili(videoId: string, url: string): Promise<Vide
         console.log('✅ UP主信息获取成功，粉丝数:', followerCount)
       }
     } catch (error) {
-      console.warn('⚠️ UP主信息获取失败:', error.message)
+      console.warn('⚠️ UP主信息获取失败:', error instanceof Error ? error.message : String(error))
     }
 
     const result = {
