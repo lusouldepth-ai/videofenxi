@@ -48,25 +48,17 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success('注册成功！请登录您的账户')
-        router.push('/login')
+      // 演示模式：模拟注册成功
+      await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟API延迟
+      
+      // 简单的客户端验证
+      if (formData.email && formData.password && formData.name) {
+        toast.success('注册成功！正在为您跳转到登录页面...')
+        setTimeout(() => {
+          router.push('/login')
+        }, 1000)
       } else {
-        toast.error(data.error || '注册失败')
+        toast.error('请填写完整信息')
       }
     } catch (error) {
       toast.error('注册失败，请稍后重试')
